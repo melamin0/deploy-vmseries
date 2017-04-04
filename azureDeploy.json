@@ -1,16 +1,25 @@
 {
     "$schema": "http://schema.management.azure.com/schemas/2015-01-01/deploymentTemplate.json#",
     "contentVersion": "1.0.0.0",
-    "parameters" : { 
-        "storageNamePrefix": {
+    "parameters" : {
+        "storageAccountName": {
             "type": "string",
-            "maxLength": 11,
-            "defaultValue": "storage",
             "metadata": {
-                "description": "The value to use for starting the storage account name."
+                "description": "Name of the storage account created to store the VM's disks.  Storage account name must be globally unique."
+            } 
+        }, 
+        "storageAccountNewOrExisting" : {
+            "type": "string",
+            "defaultValue" : "new",
+            "allowedValues" : [
+                "new",
+                "existing"
+            ],
+            "metadata": {
+                "Description": "Indicates whether the Storage Account is new or existing"
             }
         },
-        "storageSKU": {
+        "storageAccountType": {
             "type": "string",
             "allowedValues": [
                 "Standard_LRS",
@@ -26,21 +35,33 @@
         }
      },
     "variables": {  
-        "storageName": "[concat(parameters('storageNamePrefix'), uniqueString(resourceGroup().id))]"
+        "location" : "[resourceGroup().location]",
+        "baseUrl" : "https://raw.githubusercontent.com/melamin0/deploy-vmseries",
+        "storageAccountSetupURL" : "[concat(variables('baseUrl'),'/storageAccount-',parameters('storageAccountNewOrExisting'),'.json')]"
     },
     "resources": [  
         {
-            "name": "[variables('storageName')]",
-            "type": "Microsoft.Storage/storageAccounts",
-            "apiVersion": "2016-05-01",
-            "sku": {
-                "name": "[parameters('storageSKU')]"
-            },
-            "kind": "Storage",
-            "location": "[resourceGroup().location]",
-            "tags": {},
+            "name": "SettingUpStorageAccount",
+            "type": "Microsoft.Resources/deployments",
+            "apiVersion": "2015-01-01",
             "properties": {
+            "mode": "Incremental",
+            "templateLink": {
+                "uri": "[variables('storageAccountSetupURL')]",
+                "contentVersion": "1.0.0.0"
+            },
+            "parameters": {
+                "location": {
+                    "value": "[variables('location')]"
+                },
+                "storageAccountType": {
+                    "value": "[parameters('storageAccountType')]"
+                },
+                "storageAccountName": {
+                    "value": "[parameters('storageAccountName')]"
+                }
             }
+        }
         }
     ],
     "outputs": {  }
