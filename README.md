@@ -15,7 +15,7 @@ This ARM template deloy a VM-Series Next Genartion firewall in an Azure resource
 <a href="https://portal.azure.com/#create/Microsoft.Template/uri/https%3A%2F%2Fraw.githubusercontent.com%2Fmelamin0%2Fdeploy-vmseries%2Fmaster%2FazureDeploy.json" target="_blank">
     <img src="http://azuredeploy.net/deploybutton.png"/>
 </a>
-<a href="http://armviz.io/#/?load=https://raw.githubusercontent.com/melamin0/deploy-vmseries/master/azureDeploy.json" target="_blank">
+<a href="http://armviz.io/#/?load=https%3A%2F%2Fraw.githubusercontent.com%2Fmelamin0%2Fdeploy-vmseries%2Fmaster%2FazureDeploy.json" target="_blank">
     <img src="http://armviz.io/visualizebutton.png"/>
 </a>
 
