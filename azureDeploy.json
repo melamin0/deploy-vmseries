@@ -36,7 +36,7 @@
      },
     "variables": {  
         "location" : "[resourceGroup().location]",
-        "baseUrl" : "https://raw.githubusercontent.com/melamin0/deploy-vmseries",
+        "baseUrl" : "https://raw.githubusercontent.com/melamin0/deploy-vmseries/master/",
         "storageAccountSetupURL" : "[concat(variables('baseUrl'),'/storageAccount-',parameters('storageAccountNewOrExisting'),'.json')]"
     },
     "resources": [  
