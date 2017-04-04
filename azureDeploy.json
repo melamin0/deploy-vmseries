@@ -2,12 +2,6 @@
     "$schema": "http://schema.management.azure.com/schemas/2015-01-01/deploymentTemplate.json#",
     "contentVersion": "1.0.0.0",
     "parameters" : {
-        "storageAccountName": {
-            "type": "string",
-            "metadata": {
-                "description": "Name of the storage account created to store the VM's disks.  Storage account name must be globally unique."
-            } 
-        }, 
         "storageAccountNewOrExisting" : {
             "type": "string",
             "defaultValue" : "new",
@@ -17,6 +11,19 @@
             ],
             "metadata": {
                 "Description": "Indicates whether the Storage Account is new or existing"
+            }
+        },
+        "storageAccountName": {
+            "type": "string",
+            "metadata": {
+                "description": "Name of the storage account created to store the VM's disks.  Storage account name must be globally unique."
+            } 
+        },
+        "StorageAccountRG": {
+            "type": "string",
+            "defaultValue" : "",
+            "metadata": {
+               "description": "Storage Resource Group"
             }
         },
         "storageAccountType": {
@@ -32,12 +39,132 @@
             "metadata": {
                 "description": "The type of replication to use for the storage account."
             }
+        },
+        "firewallModel": {
+            "type": "string",
+            "defaultValue": "byol",
+            "allowedValues": [
+                "byol",
+                "bundle1",
+                "bundle2"
+            ],
+            "metadata": {
+                "description": "byol = Bring Your Own License; bundle1 = Bundle 1 PAYG (Hourly); bundle2 = Bundle 2 PAYG (Hourly)"
+            }
+        },
+        "panOSVersion": {
+            "type": "string",
+            "defaultValue": "latest",
+            "allowedValues": [
+                "7.1.1",
+                "8.0.0"		    
+            ],
+            "metadata": {
+                "description": "PAN-OS version."
+            }
+        },
+        "dnsNameForPublicIP": {
+            "type": "string",
+            "metadata": {
+                "description": "Globally unique DNS name to access management interface of VM-Series firewall"
+            }
+        },
+        "vmName": {
+            "type": "string",
+            "metadata": {
+                "description": "Name of VM-Series VM in the Azure portal"
+            }
+        },
+        "adminUserName": {
+            "type": "string",
+            "metadata": {
+                "description": "Username for VM-Series administrator"
+            }
+        },
+        "adminPassword": {
+            "type": "securestring",
+	    "defaultValue": "Pal0Alt0!29",
+            "metadata": {
+                "description": "Password for VM-Series administrator"
+            }
+        },
+        "authenticationType": {
+            "type": "string",
+            "metadata": {
+                "descritpion": "Type of authentication "
+            },
+            "allowedValues": [
+                "sshPublicKey",
+                "password"
+            ],
+            "defaultValue": "password"
+        },
+        "sshKey": {
+            "type": "string",
+            "defaultValue": "",
+            "metadata": {
+                "description": "SSH rsa public key file as a string."
+            }
+        },
+        "vmSize": {
+            "type": "string",
+            "allowedValues": [
+			"Standard_D3",
+			"Standard_D3_v2",
+			"Standard_D4", 
+			"Standard_D4_v2",
+			"Standard_D5",
+			"Standard_D5_v2",
+			"Standard_A4"
+            ],
+            "metadata": {
+                "description": "Azure VM size for VM-Series"
+            }
+        },
+        "virtualNetworkNewOrExisting": {
+            "type": "string",
+            "defaultValue": "new",
+            "allowedValues": [
+                "new",
+                "existing"
+            ],
+            "metadata": {
+                "description": "Select whether to use a new or existing Virtual Network, specified by virtualNetworkName"
+            }
+        },
+        "virtualNetworkName": {
+            "type": "string",
+            "defaultValue": "vnet-PanFW",
+            "metadata": {
+                "description": "Virtual Network Name"
+            }
+        },
+        "srcIPInboundNSG": {
+            "type": "string",
+            "metadata": {
+                "description": "Your source public IP address. Added to the inbound DefaultNSG on eth0 (MGMT)"
+            }
+        },
+        "virtualNetworkAddressPrefix": {
+            "type": "string",
+            "defaultValue": "192.168.0.0/16",
+            "metadata": {
+                "description": "Virtual network address CIDR"
+            }
         }
      },
-    "variables": {  
+    "variables": { 
+        "apiVersion": "2015-06-15", 
         "location" : "[resourceGroup().location]",
         "baseUrl" : "https://raw.githubusercontent.com/melamin0/deploy-vmseries/master/",
-        "storageAccountSetupURL" : "[concat(variables('baseUrl'),'/storageAccount-',parameters('storageAccountNewOrExisting'),'.json')]"
+        "storageAccountSetupURL" : "[concat(variables('baseUrl'),'/storageAccount-',parameters('storageAccountNewOrExisting'),'.json')]",
+        "vnetURL" : "[concat(variables('baseUrl'),'/vnet-', parameters('virtualNetworkNewOrExisting'),'.json')]",
+        "imagePublisher": "paloaltonetworks",
+        "imageOffer" : "vmseries1",
+        "nsgname-mgmt": "[concat(parameters('vmName'), '-DefaultNSG')]",
+        "vmTemplateUrl": "[concat(variables('baseUrl'), '/virtual-machine-', parameters('authenticationType'),'.json')]",
+        "fwpublicIPName": "[concat(parameters('vmName'), '-fwMgmtPublicIP')]",
+        "publicIPAddressType": "Dynamic"
     },
     "resources": [  
         {
@@ -45,23 +172,140 @@
             "type": "Microsoft.Resources/deployments",
             "apiVersion": "2015-01-01",
             "properties": {
-            "mode": "Incremental",
-            "templateLink": {
-                "uri": "[variables('storageAccountSetupURL')]",
-                "contentVersion": "1.0.0.0"
-            },
-            "parameters": {
-                "location": {
-                    "value": "[variables('location')]"
+                "mode": "Incremental",
+                "templateLink": {
+                    "uri": "[variables('storageAccountSetupURL')]",
+                    "contentVersion": "1.0.0.0"
                 },
-                "storageAccountType": {
-                    "value": "[parameters('storageAccountType')]"
-                },
-                "storageAccountName": {
-                    "value": "[parameters('storageAccountName')]"
+                "parameters": {
+                    "location": {
+                        "value": "[variables('location')]"
+                    },
+                    "storageAccountType": {
+                        "value": "[parameters('storageAccountType')]"
+                    },
+                    "storageAccountName": {
+                        "value": "[parameters('storageAccountName')]"
+                    },
+                    "StorageAccountRG" : {
+                        "value": "[parameters('StorageAccountRG')]"
+                    }
                 }
             }
-        }
+        }, {
+            "apiVersion": "[variables('apiVersion')]",
+            "type": "Microsoft.Network/publicIPAddresses",
+            "name": "[variables('fwpublicIPName')]",
+            "location": "[variables('location')]",
+            "properties": {
+                "publicIPAllocationMethod": "[variables('publicIPAddressType')]",
+                "dnsSettings": {
+                    "domainNameLabel": "[parameters('dnsNameForPublicIP')]"
+                }
+            }
+        }, {
+            "apiVersion": "[variables('apiVersion')]",
+            "type": "Microsoft.Network/networkSecurityGroups",
+            "name": "[concat(parameters('vmName'), '-DefaultNSG')]",
+            "location": "[variables('location')]",
+            "properties": {
+                "securityRules": [{
+                    "name": "Allow-Outside-From-IP",
+                    "properties": {
+                        "description": "Rule",
+                        "protocol": "*",
+                        "sourcePortRange": "*",
+                        "destinationPortRange": "*",
+                        "sourceAddressPrefix": "[parameters('srcIPInboundNSG')]",
+                        "destinationAddressPrefix": "*",
+                        "access": "Allow",
+                        "priority": 100,
+                        "direction": "Inbound"
+                    }
+                }, {
+                    "name": "Allow-Intra",
+                    "properties": {
+                        "description": "Allow intra network traffic",
+                        "protocol": "*",
+                        "sourcePortRange": "*",
+                        "destinationPortRange": "*",
+                        "sourceAddressPrefix": "[concat(parameters('virtualNetworkAddressPrefix'))]",
+                        "destinationAddressPrefix": "*",
+                        "access": "Allow",
+                        "priority": 101,
+                        "direction": "Inbound"
+                    }
+                }, {
+                    "name": "Default-Deny",
+                    "properties": {
+                        "description": "Default-Deny if we don't match Allow rule",
+                        "protocol": "*",
+                        "sourcePortRange": "*",
+                        "destinationPortRange": "*",
+                        "sourceAddressPrefix": "*",
+                        "destinationAddressPrefix": "*",
+                        "access": "Deny",
+                        "priority": 200,
+                        "direction": "Inbound"
+                    }
+                }]
+            }
+        },
+        {
+            "name": "PAN-VM",
+            "type": "Microsoft.Resources/deployments",
+            "apiVersion": "2015-01-01",
+            "dependsOn": [
+                "SettingUpStorageAccount",
+                "[concat('Microsoft.Network/networkInterfaces/', variables('nicName'), '0')]",
+                "[concat('Microsoft.Network/networkInterfaces/', variables('nicName'), '1')]",
+                "[concat('Microsoft.Network/networkInterfaces/', variables('nicName'), '2')]"
+            ],
+            "properties": {
+                "mode": "Incremental",
+                "templateLink": {
+                "uri": "[variables('vmTemplateUrl')]",
+                "contentVersion": "1.0.0.0"
+                },
+                "parameters": {
+                    "location": {
+                        "value": "[variables('location')]"
+                    },
+                    "vmName": {
+                        "value": "[parameters('vmName')]"
+                    },
+                    "imageSku": {
+                        "value": "[parameters('firewallModel')]"
+                    },
+                    "imageOffer": {
+                        "value": "[variables('imageOffer')]"
+                    },
+                    "imageVersion": {
+                        "value": "[parameters('panOSVersion')]"
+                    },
+                    "imagePublisher": {
+                        "value": "[variables('imagePublisher')]"
+                    },
+                    "nicName": {
+                        "value": "[variables('nicName')]"
+                    },
+                    "vmSize": {
+                        "value": "[parameters('vmSize')]"
+                    },
+                    "adminUserName": {
+                        "value": "[parameters('adminUserName')]"
+                    },
+                    "adminPassword": {
+                        "value": "[parameters('adminPassword')]"
+                    },
+                    "newStorageAccount": {
+                        "value": "[parameters('storageAccountName')]"
+                    },
+                    "sshKey": {
+                        "value": "[parameters('sshKey')]"
+                    }
+                }
+            }
         }
     ],
     "outputs": {  }

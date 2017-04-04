@@ -24,6 +24,13 @@
         "Description": "The type of the Storage Account created"
       },
       "defaultValue": "Standard_LRS"
+    },
+    "StorageAccountRG": {
+        "type": "string",
+        "defaultValue" : "",
+        "metadata": {
+            "description": "Storage Resource Group"
+        }
     }
   },
   "resources": [
@@ -39,7 +46,7 @@
   ],
   "outputs": {
     "storageAccountId": {
-      "value": "[resourceId('Microsoft.Storage/StorageAccounts',parameters('storageAccountName'))]",
+      "value": "[resourceId(parameters('StorageAccountRG'),'Microsoft.Storage/StorageAccounts',parameters('storageAccountName'))]",
       "type": "string"
     }
   }
