@@ -156,6 +156,7 @@
     "variables": { 
         "apiVersion": "2015-06-15", 
         "location" : "[resourceGroup().location]",
+	"nicName": "[concat(parameters('vmName'), '-eth')]",
         "baseUrl" : "https://raw.githubusercontent.com/melamin0/deploy-vmseries/master/",
         "storageAccountSetupURL" : "[concat(variables('baseUrl'),'/storageAccount-',parameters('storageAccountNewOrExisting'),'.json')]",
         "vnetURL" : "[concat(variables('baseUrl'),'/vnet-', parameters('virtualNetworkNewOrExisting'),'.json')]",
