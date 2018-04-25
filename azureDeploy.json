@@ -233,6 +233,8 @@
         "imageOffer" : "vmseries1",
 	"vnetID": "[resourceId('Microsoft.Network/virtualNetworks',parameters('virtualNetworkName'))]",
         "nsgname-mgmt": "[concat(parameters('vmName'), '-DefaultNSG')]",
+	"FWPrivateIPAddressUntrust": "[parameters('subnet1StartAddress')]",
+	"FWPrivateIPAddressTrust": "[parameters('subnet2StartAddress')]",
         "subnet0Ref": "[concat(variables('vnetID'),'/subnets/',parameters('subnet0Name'))]",
         "subnet1Ref": "[concat(variables('vnetID'),'/subnets/',parameters('subnet1Name'))]",
 	"subnet2Ref": "[concat(variables('vnetID'),'/subnets/',parameters('subnet2Name'))]",
